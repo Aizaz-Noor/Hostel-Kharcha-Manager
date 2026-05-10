@@ -1,0 +1,75 @@
+===========================================================
+        HOSTEL KHARCHA MANAGER - PROJECT GUIDE
+===========================================================
+
+1. HOW TO RUN THE PROJECT
+-------------------------
+A. Using Dev-C++ (Recommended):
+   - Open 'main.cpp' in Dev-C++.
+   - Press F11 (Compile & Run).
+   - If you get a 'Linker Error', close any existing console 
+     windows and press F11 again.
+
+B. Using Command Line:
+   - Navigate to the project folder.
+   - Run '.\run.bat' (if g++ is in your PATH).
+   - Or run: g++ main.cpp -o main.exe && .\main.exe
+
+2. TECHNICAL ARCHITECTURE (DSA PERSPECTIVE)
+-------------------------------------------
+This project is built WITHOUT the Standard Template Library (STL).
+Every data structure is manually implemented using pointers and 
+dynamic memory allocation (new/delete).
+
+Key Modules:
+- MemberMap (Custom Hash Map):
+    Uses separate chaining (linked lists) to store members.
+    Provides O(1) average-time complexity for looking up members.
+- HistoryDLL (Doubly Linked List):
+    Stores the full chronological history of transactions.
+    Allows easy navigation through expenses.
+- UndoStack (Stack):
+    Implements a Last-In-First-Out (LIFO) structure to roll 
+    back the most recent transaction.
+- DebtMaxHeap (Max-Heap):
+    A binary tree structure that always keeps the person with
+    the highest debt at the root (top) for instant ranking.
+
+3. ROLES & RESPONSIBILITIES
+---------------------------
+- ROLE 1: Data Infrastructure
+    Manages the Hash Map logic and manual memory for member
+    profiles.
+- ROLE 2: Transaction Lifecycle
+    Manages the Doubly Linked List for recording payments and 
+    splitting costs among members.
+- ROLE 3: Stability & Undo
+    Uses the Stack to ensure data integrity during undo operations.
+
+4. CORE FEATURES UNDERSTANDING
+------------------------------
+FEATURE 4: Automated Bill Splitting
+    When a transaction is added, the system automatically 
+    calculates shares.
+    - Equal Split: Amount divided by total member count.
+    - Weighted Split: Amount divided based on custom weights.
+
+FEATURE 5: Debt Prioritization
+    The Max-Heap dynamically updates whenever a transaction is 
+    added or undone. It ensures you always know who owes the most
+    at any given time.
+
+FEATURE 6: Summary Reporting
+    A comprehensive financial audit tool that iterates through 
+    the Hash Map to display each member's Total Expenses Paid, 
+    Total Share Owed, and current Net Balance.
+
+5. MEMORY SAFETY
+----------------
+The program uses a strict destructor-based cleanup system. 
+When the program exits or a structure is deleted, all 
+manually allocated nodes are cleared to prevent memory leaks.
+
+===========================================================
+Created for: Data Structures & Algorithms Project Study
+===========================================================
