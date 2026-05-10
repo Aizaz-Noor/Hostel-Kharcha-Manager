@@ -1,16 +1,11 @@
-﻿#include <iostream>
+#include <iostream>
 #include <string>
 #include <fstream>
+#include <limits>
+#include <cstdlib>
 #include "DataStructures.h"
 
 using namespace std;
-
-// ANSI Escape Codes for Styling
-const string RESET = "\033[0m";
-const string GREEN = "\033[32m";
-const string RED = "\033[31m";
-const string YELLOW = "\033[33m";
-const string BLUE = "\033[34m";
 
 // Global Data Structures
 MemberMap members;
@@ -19,103 +14,233 @@ UndoStack undoStack;
 DebtMaxHeap debtHeap(100);
 int currentTxId = 1;
 
+// Utility Functions
+void clearScreen() {
+#ifdef _WIN32
+    system("cls");
+#else
+    system("clear");
+#endif
+}
+
+void pressEnterToContinue() {
+    cout << "\n" << YELLOW << "Press Enter to return to menu..." << RESET;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cin.get();
+}
+
+int getSafeInt(string prompt) {
+    int value;
+    while (true) {
+        cout << prompt;
+        if (cin >> value) {
+            return value;
+        } else {
+            cout << RED << "Invalid input. Please enter a number." << RESET << endl;
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        }
+    }
+}
+
+void printHeader(string title) {
+    clearScreen();
+    // Vertical padding
+    for (int i = 0; i < 5; i++) cout << endl;
+    
+    // Horizontal padding (approx 20 spaces)
+    string hPad = "                    ";
+    cout << hPad << BLUE << "-------------------------------------------------------" << RESET << "\n";
+    cout << hPad << BOLD << CYAN << "            " << title << RESET << "\n";
+    cout << hPad << BLUE << "-------------------------------------------------------" << RESET << "\n\n";
+}
+
 void displayMenu() {
-    cout << "\n=========================================\n";
-    cout << BLUE << " Welcome to Hostel Kharcha Manager " << RESET << "\n";
-    cout << "=========================================\n";
-    cout << "1. Add Member (Role 1)\n";
-    cout << "2. Add Transaction (Role 2 & 3)\n";
-    cout << "3. Undo Last Transaction (Role 2)\n";
-    cout << "4. View Timeline (Role 2)\n";
-    cout << "5. View Highest Debtor (Role 3)\n";
-    cout << "6. Save & Exit\n";
-    cout << "Choose an option: ";
+    clearScreen();
+    // Vertical padding
+    for (int i = 0; i < 5; i++) cout << endl;
+    
+    string hPad = "                    "; // Horizontal padding
+    cout << hPad << BLUE << "+-----------------------------------------------------+" << RESET << "\n";
+    cout << hPad << BLUE << "| " << BOLD << MAGENTA << "             HOSTEL KHARCHA MANAGER              " << BLUE << " |" << RESET << "\n";
+    cout << hPad << BLUE << "+-----------------------------------------------------+" << RESET << "\n";
+    cout << hPad << BLUE << "| " << YELLOW << "1." << RESET << " Member Management                               " << BLUE << " |" << RESET << "\n";
+    cout << hPad << BLUE << "| " << YELLOW << "2." << RESET << " Transaction Management                          " << BLUE << " |" << RESET << "\n";
+    cout << hPad << BLUE << "| " << YELLOW << "3." << RESET << " Undo Last Transaction                           " << BLUE << " |" << RESET << "\n";
+    cout << hPad << BLUE << "| " << YELLOW << "4." << RESET << " View Timeline                                   " << BLUE << " |" << RESET << "\n";
+    cout << hPad << BLUE << "| " << YELLOW << "5." << RESET << " Debt Analysis (Highest Debtor)                  " << BLUE << " |" << RESET << "\n";
+    cout << hPad << BLUE << "| " << YELLOW << "6." << RESET << " View All Members & Balances                     " << BLUE << " |" << RESET << "\n";
+    cout << hPad << BLUE << "| " << YELLOW << "7." << RESET << " Save & Exit                                     " << BLUE << " |" << RESET << "\n";
+    cout << hPad << BLUE << "+-----------------------------------------------------+" << RESET << "\n";
+    cout << "\n" << hPad << "Choose an option (1-7): ";
 }
 
 void addMember() {
+    printHeader("ADD NEW MEMBER");
     string name;
     cout << "Enter Member Name: ";
     cin >> name;
     members.addMember(name);
-    cout << GREEN << "Member " << name << " added successfully!" << RESET << "\n";
+    cout << "\n" << GREEN << "✔ Member '" << name << "' added successfully!" << RESET << "\n";
+    pressEnterToContinue();
 }
 
 void addTransaction() {
+    printHeader("ADD TRANSACTION (FEATURE 4)");
+    
+    if (!members.hasMembers()) {
+        cout << RED << "✖ No members found. Please add members first." << RESET << "\n";
+        pressEnterToContinue();
+        return;
+    }
+
+    cout << "--- Registered Members ---" << endl;
+    members.printAllMembers();
+    cout << "--------------------------" << endl;
+
     string payer, desc;
     double amount;
-    cout << "Enter Payer Name: ";
+    cout << "\nEnter Payer Name: ";
     cin >> payer;
-    cout << "Enter Description: ";
-    cin >> desc;
-    cout << "Enter Amount: ";
-    cin >> amount;
-
-    if (!members.getMember(payer)) {
-        cout << RED << "Member does not exist. Please add them first." << RESET << "\n";
+    
+    Member* payerPtr = members.getMember(payer);
+    if (!payerPtr) {
+        cout << RED << "✖ Member '" << payer << "' does not exist." << RESET << "\n";
+        pressEnterToContinue();
         return;
+    }
+
+    cout << "Enter Description: ";
+    cin.ignore(); // Clear newline
+    getline(cin, desc);
+    
+    cout << "Enter Amount: ";
+    while (!(cin >> amount) || amount <= 0) {
+        cout << RED << "Invalid amount. Enter a positive number: " << RESET;
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    }
+
+    cout << "\nSplit Type:\n1. Equal Split\n2. Weighted Split\nChoice: ";
+    int splitChoice = getSafeInt("");
+
+    if (splitChoice == 2) {
+        double totalWeight = 0;
+        double* weights = new double[members.getMemberCount()];
+        for (int i = 0; i < members.getMemberCount(); i++) {
+            Member* m = members.getMemberAt(i);
+            cout << "Enter weight for " << m->name << ": ";
+            cin >> weights[i];
+            totalWeight += weights[i];
+        }
+
+        payerPtr->totalPaid += amount;
+        for (int i = 0; i < members.getMemberCount(); i++) {
+            Member* m = members.getMemberAt(i);
+            m->totalOwed += (amount * (weights[i] / totalWeight));
+        }
+        delete[] weights;
+    } else {
+        // Default: Equal Split
+        members.updateBalances(payer, amount);
     }
 
     Transaction* newTx = new Transaction(currentTxId++, payer, desc, amount);
-    
-    // Core Roles Logic:
-    
-    // 1. Appending to Timeline
     timeline.append(newTx);
-    
-    // 2. Pushing to Undo Engine
     undoStack.push(newTx);
     
-    // 3. Updating Balances in HashMap
-    members.updateBalance(payer, amount);
-    double owedAmount = (amount / 3.0); // Simple dummy logic: assuming 3 members evenly split
+    // Update DebtHeap (Feature 5: Live Ranking)
+    debtHeap.update(members);
     
-    // 4. Update DebtHeap (Mocked implementation for priority)
-    debtHeap.insertOrUpdate(payer, 0); // Payer's debt decreases
+    cout << "\n" << GREEN << "✔ Transaction recorded and split successfully!" << RESET << "\n";
+    cout << "  " << desc << " ($" << amount << ")\n";
     
-    cout << GREEN << "Transaction added (" << desc << " : " << amount << ")" << RESET << "\n";
-    delete newTx;
+    delete newTx; 
+    pressEnterToContinue();
 }
 
 void undoTransaction() {
+    printHeader("UNDO TRANSACTION (FEATURE 3)");
     Transaction* t = undoStack.pop();
     if (!t) {
-        cout << RED << "No transactions to undo!" << RESET << "\n";
+        cout << RED << "✖ No transactions to undo!" << RESET << "\n";
+        pressEnterToContinue();
         return;
     }
 
-    // Role 2 logic: Reverse balance and remote tail in timeline
-    members.updateBalance(t->payer, -t->amount);
-    timeline.removeTail();
+    // Role 2 logic: Reverse balance and remove tail in timeline
+    // Reversing balance splitting: subtract from payer's Paid, add back to everyone's Owed
+    Member* payer = members.getMember(t->payer);
+    if (payer) {
+        payer->totalPaid -= t->amount;
+        double share = t->amount / members.getMemberCount();
+        for (int i = 0; i < members.getMemberCount(); i++) {
+            Member* m = members.getMemberAt(i);
+            if (m) m->totalOwed -= share;
+        }
+    }
     
-    cout << YELLOW << "Undid Transaction: " << t->description << RESET << "\n";
-    delete t; // Manual Memory Management
+    timeline.removeTail();
+    debtHeap.update(members); // Update heap after undo
+    
+    cout << YELLOW << "↺ Undid Transaction: " << t->description << " ($" << t->amount << ")" << RESET << "\n";
+    delete t; 
+    pressEnterToContinue();
 }
 
 void viewTimeline() {
+    printHeader("TRANSACTION TIMELINE (FEATURE 2)");
     Transaction* temp = timeline.head;
-    cout << "\n--- Transaction Timeline ---\n";
-    while (temp) {
-        cout << "[" << temp->id << "] " << temp->payer << " paid " << GREEN << "$" << temp->amount << RESET << " for " << temp->description << "\n";
-        temp = temp->next;
+    if (!temp) {
+        cout << YELLOW << "No transactions yet." << RESET << "\n";
+    } else {
+        int count = 1;
+        while (temp) {
+            cout << count++ << ". " << CYAN << "[" << temp->payer << "]" << RESET 
+                 << " paid " << GREEN << "$" << temp->amount << RESET 
+                 << " for " << BOLD << temp->description << RESET << "\n";
+            temp = temp->next;
+        }
     }
+    pressEnterToContinue();
+}
+
+void viewTopDebtor() {
+    printHeader("DEBT PRIORITIZATION (FEATURE 5)");
+    debtHeap.update(members); // Ensure fresh data
+    debtHeap.printTopDebtor();
+    pressEnterToContinue();
+}
+
+void generateSummaryReport() {
+    printHeader("SUMMARY REPORT (FEATURE 6)");
+    members.printSummaryReport();
+    pressEnterToContinue();
 }
 
 int main() {
     int choice;
     do {
         displayMenu();
-        cin >> choice;
+        choice = getSafeInt("Choose an option (1-7): ");
         
         switch (choice) {
             case 1: addMember(); break;
             case 2: addTransaction(); break;
             case 3: undoTransaction(); break;
             case 4: viewTimeline(); break;
-            case 5: debtHeap.printTopDebtor(); break;
-            case 6: cout << "Saving and exiting...\n"; break;
-            default: cout << RED << "Invalid choice!\n" << RESET;
+            case 5: viewTopDebtor(); break;
+            case 6: generateSummaryReport(); break;
+            case 7: 
+                printHeader("EXITING");
+                cout << "Saving data and exiting. Goodbye!\n"; 
+                break;
+            default: 
+                cout << RED << "Invalid choice! Press Enter to try again." << RESET;
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                cin.get();
         }
-    } while (choice != 6);
+    } while (choice != 7);
 
     return 0;
 }

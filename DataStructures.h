@@ -1,10 +1,22 @@
-﻿#ifndef DS_H
+#ifndef DS_H
 #define DS_H
 
 #include <iostream>
 #include <string>
+#include <cstdio>
+#include <cstdlib>
 
 using namespace std;
+
+// ANSI Escape Codes for Styling - Available globally via header
+static const string RESET = "\033[0m";
+static const string BOLD = "\033[1m";
+static const string GREEN = "\033[32m";
+static const string RED = "\033[31m";
+static const string YELLOW = "\033[33m";
+static const string BLUE = "\033[34m";
+static const string CYAN = "\033[36m";
+static const string MAGENTA = "\033[35m";
 
 // --- Common Structures ---
 
@@ -27,14 +39,22 @@ struct Transaction {
 };
 
 struct Member {
+    int id;
     string name;
-    double balance;
+    double totalPaid;
+    double totalOwed;
     Member* next; // For Hash Map Separate Chaining
     
-    Member(string n) {
+    Member(int _id, string n) {
+        id = _id;
         name = n;
-        balance = 0.0;
+        totalPaid = 0.0;
+        totalOwed = 0.0;
         next = NULL;
+    }
+
+    double getBalance() {
+        return totalPaid - totalOwed;
     }
 };
 
@@ -45,6 +65,7 @@ class MemberMap {
 private:
     static const int TABLE_SIZE = 10;
     Member* table[TABLE_SIZE];
+    int memberCount;
 
     int hashFunction(string name) {
         int hash = 0;
@@ -57,11 +78,12 @@ private:
 public:
     MemberMap() {
         for (int i = 0; i < TABLE_SIZE; i++) table[i] = NULL;
+        memberCount = 0;
     }
 
     void addMember(string name) {
         int index = hashFunction(name);
-        Member* newMember = new Member(name);
+        Member* newMember = new Member(++memberCount, name);
         if (!table[index]) {
             table[index] = newMember;
         } else {
@@ -81,9 +103,73 @@ public:
         return NULL;
     }
     
-    void updateBalance(string name, double amount) {
-        Member* m = getMember(name);
-        if (m) m->balance += amount;
+    void updateBalances(string payerName, double amount) {
+        if (memberCount == 0) return;
+        
+        Member* payer = getMember(payerName);
+        if (!payer) return;
+        
+        payer->totalPaid += amount;
+        double share = amount / memberCount;
+        
+        // Update everyone's Owed amount
+        for (int i = 0; i < TABLE_SIZE; i++) {
+            Member* temp = table[i];
+            while (temp) {
+                temp->totalOwed += share;
+                temp = temp->next;
+            }
+        }
+    }
+
+    void printAllMembers() {
+        bool found = false;
+        for (int i = 0; i < TABLE_SIZE; i++) {
+            Member* temp = table[i];
+            while (temp) {
+                cout << " - [ID: " << temp->id << "] " << temp->name 
+                     << " (Net: " << (temp->getBalance() >= 0 ? "+" : "") << temp->getBalance() << ")\n";
+                temp = temp->next;
+                found = true;
+            }
+        }
+        if (!found) cout << "No members in the group yet.\n";
+    }
+
+    void printSummaryReport() {
+        cout << "-------------------------------------------------------------\n";
+        cout << "ID   NAME          PAID        OWED        NET BALANCE\n";
+        cout << "-------------------------------------------------------------\n";
+        for (int i = 0; i < TABLE_SIZE; i++) {
+            Member* temp = table[i];
+            while (temp) {
+                printf("%-4d %-13s %-11.2f %-11.2f %-11.2f\n", 
+                       temp->id, temp->name.c_str(), temp->totalPaid, temp->totalOwed, temp->getBalance());
+                temp = temp->next;
+            }
+        }
+    }
+
+    bool hasMembers() {
+        return memberCount > 0;
+    }
+
+    int getMemberCount() {
+        return memberCount;
+    }
+
+    // Needed for Heap updates
+    Member* getMemberAt(int n) {
+        int count = 0;
+        for (int i = 0; i < TABLE_SIZE; i++) {
+            Member* temp = table[i];
+            while (temp) {
+                if (count == n) return temp;
+                count++;
+                temp = temp->next;
+            }
+        }
+        return NULL;
     }
 
     ~MemberMap() {
@@ -180,7 +266,7 @@ public:
 // ==========================================
 struct DebtNode {
     string name;
-    double debt;
+    double debt; // We'll store absolute value of negative balance
 };
 
 class DebtMaxHeap {
@@ -227,26 +313,25 @@ public:
         heap = new DebtNode[capacity];
     }
 
-    void insertOrUpdate(string n, double d) {
-        // Simple linear search to update if exists. In O(N), but acceptable for small constraints
-        for (int i = 0; i < size; i++) {
-            if (heap[i].name == n) {
-                heap[i].debt = d;
-                heapifyUp(i);
-                heapifyDown(i);
-                return;
+    void update(MemberMap& m) {
+        size = 0; // Rebuild heap for accuracy
+        int count = m.getMemberCount();
+        for (int i = 0; i < count; i++) {
+            Member* mem = m.getMemberAt(i);
+            if (mem && mem->getBalance() < 0) {
+                heap[size].name = mem->name;
+                heap[size].debt = -mem->getBalance();
+                heapifyUp(size);
+                size++;
             }
         }
-        if (size == capacity) return; // Full
-        heap[size].name = n;
-        heap[size].debt = d;
-        heapifyUp(size);
-        size++;
     }
 
     void printTopDebtor() {
         if (size > 0) {
-            cout << heap[0].name << " owes the most: " << heap[0].debt << "\n";
+            cout << BOLD << RED << heap[0].name << RESET << " owes the most: " << RED << "$" << heap[0].debt << RESET << "\n";
+        } else {
+            cout << GREEN << "No one is in debt!" << RESET << "\n";
         }
     }
 
