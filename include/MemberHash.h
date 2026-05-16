@@ -31,7 +31,7 @@ public:
     MemberHash();
     ~MemberHash(); // Destructor to delete all chained nodes (no memory leaks)
 
-    void addMember(const string& id, const string& name);
+    bool addMember(const string& id, const string& name);  // returns true on success
     MemberNode* getMember(const string& id);
     void updateBalance(const string& id, double amount);
     void printAllMembers();

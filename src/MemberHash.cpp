@@ -37,31 +37,27 @@ int MemberHash::hashFunction(const string& id) {
 // ── addMember ─────────────────────────────────────────────────────────────────
 // DSA: Hash the ID -> go to that bucket -> check for duplicate -> insert at HEAD
 // Inserting at HEAD is O(1) and avoids traversing the whole chain.
-void MemberHash::addMember(const string& id, const string& name) {
-    // Reject empty inputs
+bool MemberHash::addMember(const string& id, const string& name) {
     if (id.empty() || name.empty()) {
-        cout << "  ERROR: ID and Name cannot be empty.\n";
-        return;
+        return false;
     }
 
     int index = hashFunction(id);
 
-    // Check for duplicate ID (walk the chain)
+    // Check for duplicate ID
     MemberNode* current = table[index];
     while (current != nullptr) {
         if (current->id == id) {
-            cout << "  ERROR: Member with ID '" << id << "' already exists!\n";
-            return;
+            return false;  // duplicate
         }
         current = current->next;
     }
 
-    // Insert new node at the HEAD of the chain (O(1))
+    // Insert at HEAD of chain (O(1))
     MemberNode* newNode = new MemberNode(id, name);
     newNode->next = table[index];
     table[index] = newNode;
-
-    cout << "  Member '" << name << "' (ID: " << id << ") registered.\n";
+    return true;
 }
 
 // ── getMember ─────────────────────────────────────────────────────────────────
