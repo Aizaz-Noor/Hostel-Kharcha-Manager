@@ -7,34 +7,89 @@ MemberHash::MemberHash() {
     for (int i = 0; i < TABLE_SIZE; ++i) {
         table[i] = nullptr;
     }
+    autoID == 1000;
 }
 
-MemberHash::~MemberHash() {
-    // TODO: Write destructor to delete all chained nodes and prevent memory leaks
-}
 
-int MemberHash::hashFunction(const string& id) {
-    // TODO: Implement a good string hashing algorithm
-    int hash = 0;
-    for (char c : id) {
-        hash += c;
+int MemberHash::hashFunction(const string& username) {
+    int key = 0;
+    for (char c : username) {
+        key += c;
     }
-    return hash % TABLE_SIZE;
+    return key % TABLE_SIZE;
 }
 
-void MemberHash::addMember(const string& id, const string& name) {
-    // TODO: Implement insertion with collision handling (chaining)
+bool MemberHash::addMember(const string& username, const string& password) {
+    if(getMember(username) != nullptr){
+        return false;
+    }
+    int id = autoID++;
+    MemberNode *newNode = new MemberNode(id, username, password);
+    
+    int index = hashFunction(username);
+
+    if(table[index] == nullptr){
+        table[index] = newNode;
+    }
+    else{
+        MemberNode *p = table[index];
+        while(p ->next != nullptr){
+            p = p ->next;
+        }
+
+        p ->next = newNode;
+    }
+
+    return true;
+    
 }
 
-MemberNode* MemberHash::getMember(const string& id) {
-    // TODO: Implement O(1) lookup
+MemberNode* MemberHash::getMember(const string& username) {
+    int index = hashFunction(username);
+    MemberNode* p = table[index];
+
+    while(p != nullptr) {
+        if(p ->userName == username) {
+            return p;
+        }
+
+        p = p ->next;
+    }
+
     return nullptr;
 }
 
-void MemberHash::updateBalance(const string& id, double amount) {
-    // TODO: Find member and update balance
+bool MemberHash::login(const string &username, const string &password){
+    MemberNode *user = getMember(username);
+
+    if(user != nullptr && user ->password == password){
+        return true;
+    }
+
+    return false;
 }
 
 void MemberHash::printAllMembers() {
-    // TODO: Iterate through the table and print members
+    for(int i = 0; i < TABLE_SIZE; i++){
+        cout<<i<<" :";
+        
+        MemberNode *p = table[i];
+        while(p != nullptr){
+            cout<<"ID: "<<p ->id<<"Username: "<<p->userName<<endl;
+            p = p ->next;
+        }
+    }
+}
+
+MemberHash::~MemberHash()
+{
+    for(int i = 0; i < TABLE_SIZE; i++){
+        MemberNode* p = table[i];
+
+        while(p != nullptr){
+            MemberNode* temp = p;
+            p = p->next;
+            delete temp;
+        }
+    }
 }
