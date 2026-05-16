@@ -36,8 +36,8 @@ public:
     MemberHash();
     ~MemberHash(); // Destructor to manually delete all nodes and prevent memory leaks
 
-    void addMember(const string& id, const string& name);
-    MemberNode* getMember(const string& id);
+    void addMember(const string& userName, const string& password);
+    MemberNode* getMember(const string& userName);
     void updateBalance(const string& id, double amount);
     void printAllMembers();
 };
