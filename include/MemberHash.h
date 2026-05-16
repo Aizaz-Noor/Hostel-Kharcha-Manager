@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -10,10 +11,12 @@ using namespace std;
 struct MemberNode {
     string id;
     string name;
-    double balance; // Positive means they are owed money, negative means they owe money
+    double balance; // Positive = owed money by others. Negative = owes money.
     MemberNode* next;
 
-    MemberNode(string _id, string _name) : id(_id), name(_name), balance(0.0), next(NULL) {}
+    // Fixed constructor: uses initializer list so struct members are set correctly
+    MemberNode(string _id, string _name)
+        : id(_id), name(_name), balance(0.0), next(nullptr) {}
 };
 
 class MemberHash {
@@ -21,18 +24,18 @@ private:
     static const int TABLE_SIZE = 100; // Fixed size array for the Hash Map
     MemberNode* table[TABLE_SIZE];
 
-    // Simple hash function to convert string ID to array index
+    // Simple hash function: sums ASCII values of each character
     int hashFunction(const string& id);
 
 public:
     MemberHash();
-    ~MemberHash(); // Destructor to manually delete all nodes and prevent memory leaks
+    ~MemberHash(); // Destructor to delete all chained nodes (no memory leaks)
 
     void addMember(const string& id, const string& name);
     MemberNode* getMember(const string& id);
     void updateBalance(const string& id, double amount);
     void printAllMembers();
-    vector<MemberNode*> getAllMembers();  // Get all members for DebtHeap
+    vector<MemberNode*> getAllMembers(); // Used by DebtHeap to build the priority queue
 };
 
 #endif // MEMBERHASH_H

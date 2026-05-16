@@ -3,15 +3,21 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 using namespace std;
+
+// Forward declaration so DebtHeap can access the global MemberHash pointer
+class MemberHash;
+struct MemberNode;
+extern MemberHash* globalMemberHash;
 
 // Structure to hold a member's debt info for the priority queue
 struct DebtRecord {
     string memberId;
     string memberName;
-    double amountOwed; // Only members in debt (negative balance) go here
-    
+    double amountOwed; // Only members with negative balance (in debt) appear here
+
     DebtRecord() : memberId(""), memberName(""), amountOwed(0.0) {}
     DebtRecord(string id, string name, double amt) : memberId(id), memberName(name), amountOwed(amt) {}
 };
@@ -22,9 +28,9 @@ private:
     int capacity;
     int size;
 
-    // Helper functions for math
-    int parent(int i) { return (i - 1) / 2; }
-    int leftChild(int i) { return (2 * i) + 1; }
+    // Index math helpers
+    int parent(int i)     { return (i - 1) / 2; }
+    int leftChild(int i)  { return (2 * i) + 1; }
     int rightChild(int i) { return (2 * i) + 2; }
 
     void heapifyUp(int index);
@@ -33,14 +39,14 @@ private:
 public:
     DebtHeap(int cap);
     ~DebtHeap();
-    
-    // Prevent accidental shallow copy and memory corruption (Rule of Three)
+
+    // Rule of Three: delete copy/assign to prevent shallow copy memory corruption
     DebtHeap(const DebtHeap&) = delete;
     DebtHeap& operator=(const DebtHeap&) = delete;
 
     void insertDebt(string id, string name, double amount);
     DebtRecord extractMaxDebtor();
-    void buildHeapFromHashMap(); // Called to generate the priority queue
+    void buildHeapFromHashMap(); // Pulls from global MemberHash and builds the heap
     void printSummaryReport();
 };
 

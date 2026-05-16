@@ -1,20 +1,23 @@
-# Ignore compiled binaries
+# Compiled binaries
 *.exe
-*.o
 *.out
+*.o
+*.obj
 
-# Ignore OS files
-.DS_Store
-Thumbs.db
-desktop.ini
+# Precompiled headers
+*.gch
+*.pch
 
-# Ignore IDE files
+# Build directories
+build/
+bin/
+out/
+
+# IDE / Editor files
 .vscode/
 .idea/
-*.sln
-*.vcxproj
-*.suo
+*.code-workspace
 
-# Ignore data storage files (if you create them)
-*.csv
-*.txt
+# Windows junk
+Thumbs.db
+desktop.ini
