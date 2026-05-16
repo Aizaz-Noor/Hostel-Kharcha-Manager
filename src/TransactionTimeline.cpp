@@ -51,7 +51,7 @@ void TransactionTimeline::logTransaction(string desc, double amount, string paye
     stackNode->next = undoStackTop;
     undoStackTop = stackNode;
 
-    cout << "Transaction #" << newNode->transactionId << " added successfully!\n";
+    cout << "  Transaction #" << newNode->transactionId << " [ " << desc << " ] added to DLL tail.\n";
 }
 
 // Remove the last transaction (undo)
@@ -60,7 +60,7 @@ void TransactionTimeline::undoLastTransaction() {
 
     // Check if there is anything to undo
     if (undoStackTop == nullptr) {
-        cout << "Nothing to undo!\n";
+        cout << "  Nothing to undo — Stack is empty!\n";
         return;
     }
 
@@ -70,7 +70,7 @@ void TransactionTimeline::undoLastTransaction() {
     undoStackTop = undoStackTop->next;
     delete topStack;
 
-    cout << "Undoing Transaction #" << toRemove->transactionId
+    cout << "  Popped from Stack: Transaction #" << toRemove->transactionId
          << " - " << toRemove->description << "\n";
 
     // Remove the node from the Doubly Linked List
@@ -98,7 +98,7 @@ void TransactionTimeline::undoLastTransaction() {
     }
 
     delete toRemove;
-    cout << "Undo successful!\n";
+    cout << "  Node removed from DLL. Undo complete!\n";
 }
 
 // Print all transactions from first to last
@@ -106,7 +106,7 @@ void TransactionTimeline::undoLastTransaction() {
 void TransactionTimeline::printTimeline() {
 
     if (head == nullptr) {
-        cout << "\n  No transactions recorded yet.\n";
+        cout << "\n  DLL is empty — no transactions recorded yet.\n";
         return;
     }
 
