@@ -13,7 +13,7 @@ struct MemberNode {
     double balance; // Positive means they are owed money, negative means they owe money
     MemberNode* next;
 
-    MemberNode(string _id, string _name) : id(_id), name(_name), balance(0.0), next(nullptr) {}
+    MemberNode(string _id, string _name) : id(_id), name(_name), balance(0.0), next(NULL) {}
 };
 
 class MemberHash {

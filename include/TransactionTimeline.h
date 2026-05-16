@@ -17,7 +17,7 @@ struct TransactionNode {
     TransactionNode* next;
 
     TransactionNode(int id, string desc, double amt, string payer) 
-        : transactionId(id), description(desc), amount(amt), payerId(payer), prev(nullptr), next(nullptr) {}
+        : transactionId(id), description(desc), amount(amt), payerId(payer), prev(NULL), next(NULL) {}
 };
 
 // Node for the Stack (Undo Engine)
@@ -25,7 +25,7 @@ struct StackNode {
     TransactionNode* transactionRef; // Pointer to the transaction to undo
     StackNode* next;
 
-    StackNode(TransactionNode* ref) : transactionRef(ref), next(nullptr) {}
+    StackNode(TransactionNode* ref) : transactionRef(ref), next(NULL) {}
 };
 
 class TransactionTimeline {

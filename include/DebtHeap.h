@@ -33,6 +33,10 @@ private:
 public:
     DebtHeap(int cap);
     ~DebtHeap();
+    
+    // Prevent accidental shallow copy and memory corruption (Rule of Three)
+    DebtHeap(const DebtHeap&) = delete;
+    DebtHeap& operator=(const DebtHeap&) = delete;
 
     void insertDebt(string id, string name, double amount);
     DebtRecord extractMaxDebtor();
