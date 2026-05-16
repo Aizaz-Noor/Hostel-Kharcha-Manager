@@ -32,6 +32,7 @@ public:
     MemberNode* getMember(const string& id);
     void updateBalance(const string& id, double amount);
     void printAllMembers();
+    vector<MemberNode*> getAllMembers();  // Get all members for DebtHeap
 };
 
 #endif // MEMBERHASH_H

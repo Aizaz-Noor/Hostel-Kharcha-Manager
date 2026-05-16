@@ -3,6 +3,8 @@
 #include "../include/TransactionTimeline.h"
 #include "../include/DebtHeap.h"
 
+MemberHash* globalMemberHash = nullptr;  // Global pointer for DebtHeap to access
+
 using namespace std;
 
 // ── Colors ──────────────────────────────────────────────
@@ -64,6 +66,8 @@ void printMenu() {
 
 int main() {
     MemberHash profiles;
+    globalMemberHash = &profiles;  // Initialize global pointer for DebtHeap
+    
     TransactionTimeline timeline;
     DebtHeap analytics(100);
 
@@ -141,9 +145,11 @@ int main() {
         else if (choice == 6) {
             clearScreen();
             cout << MAGENTA << "\n  ╔══════════════════════════════════╗\n";
-            cout            << "  ║      TOP DEBTOR (MAX-HEAP)       ║\n";
+            cout            << "  ║      DEBT SUMMARY REPORT         ║\n";
             cout            << "  ╚══════════════════════════════════╝\n" << RESET;
-            cout << "\n  This feature is handled by Role 3 (Debt Heap).\n";
+            
+            analytics.buildHeapFromHashMap();  // Build heap from MemberHash
+            analytics.printSummaryReport();    // Print debtors in descending order
             pause();
         }
 
