@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include<fstream>
 
 using namespace std;
 
@@ -14,13 +15,14 @@ struct MemberNode {
     double balance; // Positive means they are owed money, negative means they owe money
     MemberNode* next;
 
-    MemberNode(int _id, string user_name, string _password) { 
-        int id = _id;
-        string userName= user_name;
-        string password = _password;
-        double balance = 0.0;
-        next = nullptr;
-    }
+    MemberNode(int _id, string user_name, string _password)
+{
+    id = _id;
+    userName = user_name;
+    password = _password;
+    balance = 0.0;
+    next = nullptr;
+}
 
 };
 

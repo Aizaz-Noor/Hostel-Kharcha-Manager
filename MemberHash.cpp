@@ -7,7 +7,9 @@ MemberHash::MemberHash() {
     for (int i = 0; i < TABLE_SIZE; ++i) {
         table[i] = nullptr;
     }
-    autoID == 1000;
+    autoID = 1000;
+
+    loadFromFile();
 }
 
 
@@ -40,6 +42,7 @@ bool MemberHash::addMember(const string& username, const string& password) {
         p ->next = newNode;
     }
 
+    saveToFile();
     return true;
     
 }
@@ -70,15 +73,109 @@ bool MemberHash::login(const string &username, const string &password){
 }
 
 void MemberHash::printAllMembers() {
-    for(int i = 0; i < TABLE_SIZE; i++){
-        cout<<i<<" :";
-        
-        MemberNode *p = table[i];
-        while(p != nullptr){
-            cout<<"ID: "<<p ->id<<"Username: "<<p->userName<<endl;
-            p = p ->next;
+
+    for(int i = 0; i < TABLE_SIZE; i++) {
+
+        MemberNode* p = table[i];
+
+        if(p == nullptr) {
+            continue;
+        }
+
+        cout << "\nBucket "
+             << i
+             << ":\n";
+
+        while(p != nullptr) {
+
+            cout << "--------------------------------\n";
+
+            cout << "ID: "
+                 << p->id
+                 << endl;
+
+            cout << "Username: "
+                 << p->userName
+                 << endl;
+
+            cout << "Balance: "
+                 << p->balance
+                 << endl;
+
+            cout << "--------------------------------\n";
+
+            p = p->next;
         }
     }
+}
+
+void MemberHash::saveToFile() {
+    ofstream file("members.txt");
+
+    if(!file) {
+        cout << "File could not open." << endl;
+        return;
+    }
+
+    for(int i = 0; i < TABLE_SIZE; i++) {
+
+        MemberNode* p = table[i];
+
+        while(p != nullptr) {
+
+            file << p->id << " "
+                 << p->userName << " "
+                 << p->password << " "
+                 << p->balance
+                 << endl;
+
+            p = p->next;
+        }
+    }
+
+    file.close();
+}
+
+void MemberHash::loadFromFile() {
+    ifstream file("members.txt");
+
+    if(!file) {
+        return;
+    }
+
+    int id;
+    string username;
+    string password;
+    double balance;
+
+    while(file >>id >>username >>password >>balance)
+    {
+        MemberNode* newNode =
+            new MemberNode(id, username, password);
+
+            newNode->balance = balance;
+
+        int index = hashFunction(username);
+
+        if(table[index] == nullptr) {
+            table[index] = newNode;
+        }
+        else {
+            MemberNode* p = table[index];
+
+            while(p->next != nullptr) {
+                p = p->next;
+            }
+
+            p->next = newNode;
+        }
+
+        if(id >= autoID) {
+            autoID = id + 1;
+        }
+    }
+
+    file.close();
 }
 
 MemberHash::~MemberHash()
