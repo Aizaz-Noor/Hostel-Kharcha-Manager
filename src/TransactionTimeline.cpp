@@ -1,7 +1,9 @@
 #include "../include/TransactionTimeline.h"
+#include "../include/MemberHash.h"
 #include <iomanip>
+#include <iostream>
 
-// Constructor - set everything to null/zero at start
+// Initialize timeline fields
 TransactionTimeline::TransactionTimeline() {
     head = nullptr;
     tail = nullptr;
@@ -9,7 +11,7 @@ TransactionTimeline::TransactionTimeline() {
     transactionCounter = 1;
 }
 
-// Destructor - free all DLL nodes, then free all stack nodes
+// Free all memory in list and stack
 TransactionTimeline::~TransactionTimeline() {
     TransactionNode* current = head;
     while (current != nullptr) {
@@ -26,103 +28,110 @@ TransactionTimeline::~TransactionTimeline() {
     }
 }
 
-// Add a new transaction to the timeline
-// DSA: Append to tail of Doubly Linked List, then Push onto Stack
-void TransactionTimeline::logTransaction(string desc, double amount, string payerId) {
-
-    // Create a new node for this transaction
-    TransactionNode* newNode = new TransactionNode(transactionCounter, desc, amount, payerId);
-    transactionCounter++;
-
-    // Add to the end of the Doubly Linked List
+// Insert transaction directly into doubly linked list (used when loading saved files)
+void TransactionTimeline::restoreTransaction(int id, string desc, double amount, string payerId, BalanceChange* changes, int numChanges) {
+    TransactionNode* newNode = new TransactionNode(id, desc, amount, payerId, changes, numChanges);
     if (head == nullptr) {
-        // List is empty, this node is both head and tail
         head = newNode;
         tail = newNode;
     } else {
-        // Connect new node after the current tail
+        newNode->prev = tail;
+        tail->next = newNode;
+        tail = newNode;
+    }
+}
+
+// Add a transaction node to the end of list and push it onto the undo stack
+void TransactionTimeline::logTransaction(string desc, double amount, string payerId, BalanceChange* changes, int numChanges) {
+    TransactionNode* newNode = new TransactionNode(transactionCounter, desc, amount, payerId, changes, numChanges);
+    transactionCounter++;
+
+    if (head == nullptr) {
+        head = newNode;
+        tail = newNode;
+    } else {
         newNode->prev = tail;
         tail->next = newNode;
         tail = newNode;
     }
 
-    // Push this node's address onto the undo stack
+    // Push transaction node onto stack
     StackNode* stackNode = new StackNode(newNode);
     stackNode->next = undoStackTop;
     undoStackTop = stackNode;
 
-    cout << "  Transaction #" << newNode->transactionId << " [ " << desc << " ] added to DLL tail.\n";
+    cout << "  Expense '" << desc << "' (Rs. " << amount << ") logged as Transaction #" << newNode->transactionId << ".\n";
 }
 
-// Remove the last transaction (undo)
-// DSA: Pop from Stack to find which node to remove, then remove it from DLL
-void TransactionTimeline::undoLastTransaction() {
-
-    // Check if there is anything to undo
+// Pop latest transaction from stack, reverse balance changes, and remove it from list
+void TransactionTimeline::undoLastTransaction(MemberHash* hash) {
     if (undoStackTop == nullptr) {
-        cout << "  Nothing to undo — Stack is empty!\n";
+        cout << "  Nothing to undo — No transactions recorded yet!\n";
         return;
     }
 
-    // Pop from the stack - this tells us which transaction to remove
+    // Pop the top of stack
     StackNode* topStack = undoStackTop;
     TransactionNode* toRemove = topStack->transactionRef;
     undoStackTop = undoStackTop->next;
     delete topStack;
 
-    cout << "  Popped from Stack: Transaction #" << toRemove->transactionId
+    cout << "  Undoing Transaction #" << toRemove->transactionId
          << " - " << toRemove->description << "\n";
 
-    // Remove the node from the Doubly Linked List
-    // We have 4 cases depending on where the node is
+    // Reverse changes applied to member balances
+    if (hash != nullptr && toRemove->changes != nullptr) {
+        for (int i = 0; i < toRemove->numChanges; i++) {
+            // Apply negative of the change amount to reset
+            hash->updateBalance(toRemove->changes[i].memberId, -(toRemove->changes[i].changeAmount));
+        }
+        cout << "  Successfully reversed balance changes.\n";
+    }
 
+    // Remove the node from the doubly linked list
     if (toRemove->prev == nullptr && toRemove->next == nullptr) {
-        // Only node in the list
+        // Only one node in list
         head = nullptr;
         tail = nullptr;
     }
     else if (toRemove->prev == nullptr) {
-        // Node is at the head
+        // Removing head node
         head = toRemove->next;
         head->prev = nullptr;
     }
     else if (toRemove->next == nullptr) {
-        // Node is at the tail
+        // Removing tail node
         tail = toRemove->prev;
         tail->next = nullptr;
     }
     else {
-        // Node is in the middle
+        // Removing middle node
         toRemove->prev->next = toRemove->next;
         toRemove->next->prev = toRemove->prev;
     }
 
     delete toRemove;
-    cout << "  Node removed from DLL. Undo complete!\n";
+    cout << "  Undo complete!\n";
 }
 
-// Print all transactions from first to last
-// DSA: Traverse DLL using next pointers (head to tail)
+// Print transaction records from head to tail
 void TransactionTimeline::printTimeline() {
-
     if (head == nullptr) {
-        cout << "\n  DLL is empty — no transactions recorded yet.\n";
+        cout << "\n  No transactions recorded yet.\n";
         return;
     }
 
-    // Print table header
     cout << "\n";
     cout << "  +----+----------------------------+-------------+--------------+\n";
     cout << "  | #  | Description                | Amount      | Paid By      |\n";
     cout << "  +----+----------------------------+-------------+--------------+\n";
 
-    // Walk the DLL from head to tail using next pointers
     TransactionNode* current = head;
     while (current != nullptr) {
-
-        // Trim description and payer if too long
         string desc  = current->description;
         string payer = current->payerId;
+        
+        // Truncate values if they exceed column widths
         if (desc.length()  > 26) desc  = desc.substr(0, 23) + "...";
         if (payer.length() > 12) payer = payer.substr(0, 12);
 
@@ -136,5 +145,4 @@ void TransactionTimeline::printTimeline() {
     }
 
     cout << "  +----+----------------------------+-------------+--------------+\n";
-    cout << "\n  Direction: HEAD --> [next] --> [next] --> TAIL\n";
 }

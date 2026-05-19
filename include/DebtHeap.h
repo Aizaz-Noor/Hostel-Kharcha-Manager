@@ -3,36 +3,36 @@
 
 #include <iostream>
 #include <string>
-#include <vector>
 
 using namespace std;
 
-// Forward declaration so DebtHeap can access the global MemberHash pointer
 class MemberHash;
 struct MemberNode;
 extern MemberHash* globalMemberHash;
 
-// Structure to hold a member's debt info for the priority queue
+// Structure for tracking a roommate's debt amount
 struct DebtRecord {
     string memberId;
     string memberName;
-    double amountOwed; // Only members with negative balance (in debt) appear here
+    double amountOwed; // Positive value representing the amount the roommate owes
 
     DebtRecord() : memberId(""), memberName(""), amountOwed(0.0) {}
     DebtRecord(string id, string name, double amt) : memberId(id), memberName(name), amountOwed(amt) {}
 };
 
+// Max-heap to sort debtors by amount owed
 class DebtHeap {
 private:
-    DebtRecord* heapArray; // Dynamic array for the Max-Heap
+    DebtRecord* heapArray; // Array for binary heap tree
     int capacity;
     int size;
 
-    // Index math helpers
+    // Helper functions for binary heap indices
     int parent(int i)     { return (i - 1) / 2; }
     int leftChild(int i)  { return (2 * i) + 1; }
     int rightChild(int i) { return (2 * i) + 2; }
 
+    // Shift elements up/down to keep heap properties intact
     void heapifyUp(int index);
     void heapifyDown(int index);
 
@@ -40,13 +40,20 @@ public:
     DebtHeap(int cap);
     ~DebtHeap();
 
-    // Rule of Three: delete copy/assign to prevent shallow copy memory corruption
+    // Disable copying and assignment to avoid memory leaks
     DebtHeap(const DebtHeap&) = delete;
     DebtHeap& operator=(const DebtHeap&) = delete;
 
+    // Insert a debt entry
     void insertDebt(string id, string name, double amount);
+    
+    // Extract and return the largest debtor
     DebtRecord extractMaxDebtor();
-    void buildHeapFromHashMap(); // Pulls from global MemberHash and builds the heap
+    
+    // Read balances from MemberHash and build the heap
+    void buildHeapFromHashMap();
+    
+    // Print all debtors sorted by size of debt
     void printSummaryReport();
 };
 

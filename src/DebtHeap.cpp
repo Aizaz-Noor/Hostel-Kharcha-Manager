@@ -1,9 +1,6 @@
 #include "../include/DebtHeap.h"
 #include "../include/MemberHash.h"
 
-// Role 3: Implement the Max-Heap Priority Queue here!
-// Note: You must manually re-balance the array tree using heapify.
-
 DebtHeap::DebtHeap(int cap) {
     capacity = cap;
     size = 0;
@@ -14,8 +11,8 @@ DebtHeap::~DebtHeap() {
     delete[] heapArray;
 }
 
+// Push the element up the tree if it is larger than its parent
 void DebtHeap::heapifyUp(int index) {
-    //Compare with parent and swap if larger
      while (index > 0) {
         int parentIdx = parent(index);
         
@@ -31,9 +28,9 @@ void DebtHeap::heapifyUp(int index) {
     }
 }
 
+// Push the element down the tree to its correct spot
 void DebtHeap::heapifyDown(int index) {
-    //Compare with children and swap with largest
-while (true) {
+    while (true) {
         int leftIdx = leftChild(index);
         int rightIdx = rightChild(index);
         int largestIdx = index;
@@ -60,23 +57,22 @@ while (true) {
     }
 }
 
+// Add a debtor record and restore heap property
 void DebtHeap::insertDebt(string id, string name, double amount) {
-    // Insert at end and heapifyUp
     if (size >= capacity) {
-        cout << "ERROR: Heap is full! Cannot insert more debtors.\n";
+        cout << "  ! Maximum limit reached! Cannot process more debtors.\n";
         return;
     }
     
     heapArray[size] = DebtRecord(id, name, amount);
-    size++;              // Claim the array slot before heapifying
-    heapifyUp(size - 1); // Restore heap property on the newly added element
-
+    size++;
+    heapifyUp(size - 1);
 }
 
+// Remove and return the debtor who owes the most
 DebtRecord DebtHeap::extractMaxDebtor() {
-    // Return root, move last element to root, heapifyDown
      if (size <= 0) {
-        cout << "ERROR: Heap is empty! No debtors to extract.\n";
+        cout << "  ! No debtors found.\n";
         return DebtRecord();
     }
     
@@ -89,38 +85,35 @@ DebtRecord DebtHeap::extractMaxDebtor() {
     }
     
     return maxDebtor;
-
 }
 
+// Scan the roommate hash map and build a heap from members with negative balances
 void DebtHeap::buildHeapFromHashMap() {
-    //Pull data from the Hash Map and insert debts
- // Clear existing heap
     size = 0;
     
-    // Check if global MemberHash is available
     if (globalMemberHash == nullptr) {
-        cout << "ERROR: MemberHash not initialized! Cannot build heap.\n";
+        cout << "  ! System not initialized! Cannot generate report.\n";
         return;
     }
     
-    // Get all members from MemberHash
-    vector<MemberNode*> allMembers = globalMemberHash->getAllMembers();
+    int count = 0;
+    MemberNode** allMembers = globalMemberHash->getAllMembers(count);
     
-    // Add each debtor to heap (only members with negative balance)
-    for (MemberNode* member : allMembers) {
+    for (int i = 0; i < count; i++) {
+        MemberNode* member = allMembers[i];
         if (member != nullptr && member->balance < 0) {
-            // Convert negative balance to positive amount owed
             double amountOwed = -(member->balance);
             insertDebt(member->id, member->name, amountOwed);
         }
     }
     
-    cout << "Heap built with " << size << " debtors.\n";
+    delete[] allMembers;
+    cout << "  Generated report for " << size << " debtors.\n";
 }
 
+// Extract all debtors from the heap one by one to print a sorted list
 void DebtHeap::printSummaryReport() {
-    //  Extract everyone and print the final financial summary
- cout << "\n" << string(50, '=') << "\n";
+    cout << "\n" << string(50, '=') << "\n";
     cout << "              DEBT SUMMARY REPORT\n";
     cout << string(50, '=') << "\n\n";
     

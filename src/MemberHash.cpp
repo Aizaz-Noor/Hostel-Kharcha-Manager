@@ -1,16 +1,14 @@
 #include "../include/MemberHash.h"
 #include <iomanip>
 
-// ── Constructor ──────────────────────────────────────────────────────────────
-// DSA: Initialize every bucket to nullptr (empty chains)
+// Set all hash table buckets to nullptr
 MemberHash::MemberHash() {
     for (int i = 0; i < TABLE_SIZE; ++i) {
         table[i] = nullptr;
     }
 }
 
-// ── Destructor ───────────────────────────────────────────────────────────────
-// DSA: Walk every chain and delete each node to prevent memory leaks
+// Free all memory by deleting chained nodes
 MemberHash::~MemberHash() {
     for (int i = 0; i < TABLE_SIZE; ++i) {
         MemberNode* current = table[i];
@@ -23,9 +21,7 @@ MemberHash::~MemberHash() {
     }
 }
 
-// ── Hash Function ─────────────────────────────────────────────────────────────
-// DSA: Sum ASCII values of every character in the ID, then mod by TABLE_SIZE
-// This distributes keys across 0..99 with minimal collisions for short IDs.
+// Sum ASCII values of characters in ID and modulo by TABLE_SIZE
 int MemberHash::hashFunction(const string& id) {
     int hash = 0;
     for (char c : id) {
@@ -34,52 +30,84 @@ int MemberHash::hashFunction(const string& id) {
     return hash % TABLE_SIZE;
 }
 
-// ── addMember ─────────────────────────────────────────────────────────────────
-// DSA: Hash the ID -> go to that bucket -> check for duplicate -> insert at HEAD
-// Inserting at HEAD is O(1) and avoids traversing the whole chain.
-bool MemberHash::addMember(const string& id, const string& name) {
+// Register a new member. Returns false if inputs are blank or ID is taken.
+bool MemberHash::addMember(const string& id, const string& name, const string& password, double initialDeposit) {
     if (id.empty() || name.empty()) {
         return false;
     }
 
     int index = hashFunction(id);
 
-    // Check for duplicate ID
+    // Look for duplicate ID in the bucket chain
     MemberNode* current = table[index];
     while (current != nullptr) {
         if (current->id == id) {
-            return false;  // duplicate
+            return false;
         }
         current = current->next;
     }
 
-    // Insert at HEAD of chain (O(1))
-    MemberNode* newNode = new MemberNode(id, name);
+    // Insert new node at the head of the chain (constant time O(1))
+    MemberNode* newNode = new MemberNode(id, name, password, initialDeposit);
     newNode->next = table[index];
     table[index] = newNode;
     return true;
 }
 
-// ── getMember ─────────────────────────────────────────────────────────────────
-// DSA: Hash the ID -> walk the chain at that bucket -> return matching node
-// Average case O(1) — only degrades if many IDs hash to the same bucket.
+// Delete a member node. Returns false if not found or if balance is not zero.
+bool MemberHash::removeMember(const string& id) {
+    if (id.empty()) return false;
+    
+    int index = hashFunction(id);
+    MemberNode* current = table[index];
+    MemberNode* prev = nullptr;
+
+    while (current != nullptr) {
+        if (current->id == id) {
+            // Cannot delete if they still owe money or have a surplus
+            if (current->balance != 0.0) {
+                return false; 
+            }
+            
+            // Unlink node from chain
+            if (prev == nullptr) {
+                table[index] = current->next;
+            } else {
+                prev->next = current->next;
+            }
+            delete current;
+            return true;
+        }
+        prev = current;
+        current = current->next;
+    }
+    return false;
+}
+
+// Search for a member by ID. Returns pointer or nullptr.
 MemberNode* MemberHash::getMember(const string& id) {
     int index = hashFunction(id);
 
     MemberNode* current = table[index];
     while (current != nullptr) {
         if (current->id == id) {
-            return current; // Found
+            return current;
         }
         current = current->next;
     }
-
-    return nullptr; // Not found
+    return nullptr;
 }
 
-// ── updateBalance ─────────────────────────────────────────────────────────────
-// DSA: Find the member via getMember(), then adjust their balance.
-// Positive amount = member gains money. Negative = member spent / owes.
+// Validate credentials for portal entry
+bool MemberHash::login(const string& id, const string& password) {
+    MemberNode* member = getMember(id);
+    if (member != nullptr && member->password == password) {
+        return true;
+    }
+    return false;
+}
+
+// Add amount to the specified member's balance
 void MemberHash::updateBalance(const string& id, double amount) {
     MemberNode* member = getMember(id);
 
@@ -91,27 +119,29 @@ void MemberHash::updateBalance(const string& id, double amount) {
     member->balance += amount;
 }
 
-// ── printAllMembers ───────────────────────────────────────────────────────────
-// DSA: Walk all TABLE_SIZE buckets; for each non-empty bucket, walk the chain.
+// Print all registered members in a grid
 void MemberHash::printAllMembers() {
     bool anyMember = false;
 
     cout << "\n";
-    cout << "  +--------+--------------------+----------------+--------+\n";
-    cout << "  | ID     | Name               | Balance (Rs.)  | Status |\n";
-    cout << "  +--------+--------------------+----------------+--------+\n";
+    cout << "  +--------+--------------------+----------------+----------+\n";
+    cout << "  | ID     | Name               | Balance (Rs.)  | Status   |\n";
+    cout << "  +--------+--------------------+----------------+----------+\n";
+
+    double totalFundRemaining = 0.0;
 
     for (int i = 0; i < TABLE_SIZE; ++i) {
         MemberNode* current = table[i];
         while (current != nullptr) {
             anyMember = true;
+            totalFundRemaining += current->balance;
 
             string status;
-            if (current->balance > 0)       status = "CREDIT";
-            else if (current->balance < 0)  status = "OWES  ";
-            else                            status = "EVEN  ";
+            if (current->balance > 0)       status = "REMAINED";
+            else if (current->balance < 0)  status = "OWES";
+            else                            status = "SETTLED";
 
-            // Trim name if too long for column
+            // Limit display name length to fit column formatting
             string name = current->name;
             if (name.length() > 18) name = name.substr(0, 15) + "...";
 
@@ -119,32 +149,45 @@ void MemberHash::printAllMembers() {
                  << left  << setw(6)  << current->id      << " | "
                  << left  << setw(18) << name              << " | Rs. "
                  << right << setw(9)  << fixed << setprecision(2) << current->balance << " | "
-                 << left  << setw(6)  << status            << " |\n";
+                 << left  << setw(8)  << status            << " |\n";
 
             current = current->next;
         }
     }
 
     if (!anyMember) {
-        cout << "  |              No members registered yet.              |\n";
+        cout << "  |               No members registered yet.                |\n";
     }
 
-    cout << "  +--------+--------------------+----------------+--------+\n\n";
+    cout << "  +--------+--------------------+----------------+----------+\n\n";
+
+    if (anyMember) {
+        cout << "  Total Fund Cash Remaining : Rs. " 
+             << fixed << setprecision(2) << totalFundRemaining << "\n";
+    }
 }
 
-// ── getAllMembers ─────────────────────────────────────────────────────────────
-// DSA: Collect every member pointer into a vector for the DebtHeap to process.
-// This bridges the Hash Map and the Max-Heap modules.
-vector<MemberNode*> MemberHash::getAllMembers() {
-    vector<MemberNode*> result;
-
-    for (int i = 0; i < TABLE_SIZE; ++i) {
-        MemberNode* current = table[i];
-        while (current != nullptr) {
-            result.push_back(current);
-            current = current->next;
+// Build a dynamic array of all member pointers for external processing (like heap sorting)
+MemberNode** MemberHash::getAllMembers(int& outCount) {
+    int count = 0;
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        MemberNode* curr = table[i];
+        while (curr != nullptr) {
+            count++;
+            curr = curr->next;
         }
     }
-
+    
+    MemberNode** result = new MemberNode*[count];
+    int index = 0;
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        MemberNode* curr = table[i];
+        while (curr != nullptr) {
+            result[index++] = curr;
+            curr = curr->next;
+        }
+    }
+    
+    outCount = count;
     return result;
 }

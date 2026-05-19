@@ -3,39 +3,55 @@
 
 #include <iostream>
 #include <string>
-#include <vector>
 
 using namespace std;
 
-// Node for the Chaining in the Hash Map
+// Node for separate chaining in the hash map
 struct MemberNode {
     string id;
     string name;
-    double balance; // Positive = owed money by others. Negative = owes money.
+    string password;
+    double balance; // Positive = owed money, Negative = owes money
     MemberNode* next;
 
-    // Fixed constructor: uses initializer list so struct members are set correctly
-    MemberNode(string _id, string _name)
-        : id(_id), name(_name), balance(0.0), next(nullptr) {}
+    // Initialize member node data
+    MemberNode(string _id, string _name, string _password, double _initialDeposit)
+        : id(_id), name(_name), password(_password), balance(_initialDeposit), next(nullptr) {}
 };
 
+// Hash map storage for roommate profiles
 class MemberHash {
 private:
-    static const int TABLE_SIZE = 100; // Fixed size array for the Hash Map
+    static const int TABLE_SIZE = 100; // Total buckets in the hash table
     MemberNode* table[TABLE_SIZE];
 
-    // Simple hash function: sums ASCII values of each character
+    // Compute bucket index from ID by summing ASCII values
     int hashFunction(const string& id);
 
 public:
     MemberHash();
-    ~MemberHash(); // Destructor to delete all chained nodes (no memory leaks)
+    ~MemberHash(); // Destructor to free all allocated chain nodes
 
-    bool addMember(const string& id, const string& name);  // returns true on success
+    // Add a new member. Returns true on success, false if ID exists.
+    bool addMember(const string& id, const string& name, const string& password, double initialDeposit = 0.0);
+    
+    // Remove a member. Only allowed if balance is settled (0.0).
+    bool removeMember(const string& id);
+    
+    // Find a member node by ID. Returns nullptr if not found.
     MemberNode* getMember(const string& id);
+    
+    // Verify member ID and password
+    bool login(const string& id, const string& password);
+    
+    // Adjust balance of a member by the given amount
     void updateBalance(const string& id, double amount);
+    
+    // Print all registered members in a grid format
     void printAllMembers();
-    vector<MemberNode*> getAllMembers(); // Used by DebtHeap to build the priority queue
+    
+    // Collect all member pointers into a dynamic array for heap analytics
+    MemberNode** getAllMembers(int& count);
 };
 
 #endif // MEMBERHASH_H

@@ -1,0 +1,3 @@
+g++ -std=c++11 src/main.cpp src/MemberHash.cpp src/TransactionTimeline.cpp src/DebtHeap.cpp -o HKM.exe
+
+.\HKM.exe
