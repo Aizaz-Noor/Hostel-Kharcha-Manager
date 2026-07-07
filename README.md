@@ -19,13 +19,13 @@ This app keeps a running ledger of every shared expense, splits costs automatica
 - **Member registration** with ID, name, and password
 - **Admin and roommate login** with separate access levels
 - **Log shared expenses** and split them equally or by custom weight
-- **Undo any transaction** — reverses the expense and restores all balances
-- **Transaction timeline** — a chronological list of every expense
+- **Undo any transaction** reverses the expense and restores all balances
+- **Transaction timeline** a chronological list of every expense
 - **Live balance view** for all members
-- **Debt report** — shows who owes the most, ranked by amount
-- **Debt settlement** — deposit or withdraw money directly
-- **Remove a roommate** — handles outstanding balances before deletion
-- **Data persistence** — saves to CSV on exit, reloads on next run
+- **Debt report** shows who owes the most, ranked by amount
+- **Debt settlement** deposit or withdraw money directly
+- **Remove a roommate** handles outstanding balances before deletion
+- **Data persistence** saves to CSV on exit, reloads on next run
 
 ---
 
