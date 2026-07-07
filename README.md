@@ -1,87 +1,117 @@
 # Hostel Kharcha Manager
 
-A console-based hostel expense tracker built in C++ as a semester DSA project.  
-Every module demonstrates a core data structure from scratch — no STL containers used for DSA logic.
+A C++ terminal application for tracking shared expenses in a hostel. Six roommates, one electricity bill, zero arguments about who paid — that's what this solves.
+
+Built as a 3rd semester Data Structures project. Every data structure is written from scratch. No STL containers, no external libraries.
 
 ---
 
-## Team
+## The Problem
 
-| Member | Module | Data Structure |
-|:---|:---|:---|
-| Basit Shahid | DebtHeap | Max-Heap (Priority Queue) |
-| Aizaz Noor | TransactionTimeline | Doubly Linked List + Stack |
-| Abdul | MemberHash | Hash Map (Chaining) |
+When multiple people share a space, tracking who paid what becomes a daily headache. Manual notes get lost. WhatsApp messages get buried. Someone always forgets they owe money.
+
+This app keeps a running ledger of every shared expense, splits costs automatically, and lets you undo a transaction if someone made a mistake — all from the terminal.
 
 ---
 
 ## Features
 
-| Option | Feature | DSA Used |
-|:---:|:---|:---|
-| 1 | Add New Roommate | Hash Map insert |
-| 2 | Log a Shared Expense | DLL append + Stack push |
-| 3 | Undo Last Transaction | Stack pop + DLL delete |
-| 4 | View Transaction Timeline | DLL traversal |
-| 5 | View Roommate Balances | Hash Map full scan |
-| 6 | Who Owes The Most? | Max-Heap extract |
-| 7 | Exit | — |
+- **Member registration** with ID, name, and password
+- **Admin and roommate login** with separate access levels
+- **Log shared expenses** and split them equally or by custom weight
+- **Undo any transaction** — reverses the expense and restores all balances
+- **Transaction timeline** — a chronological list of every expense
+- **Live balance view** for all members
+- **Debt report** — shows who owes the most, ranked by amount
+- **Debt settlement** — deposit or withdraw money directly
+- **Remove a roommate** — handles outstanding balances before deletion
+- **Data persistence** — saves to CSV on exit, reloads on next run
+
+---
+
+## Data Structures Used
+
+| Structure | Where |
+|---|---|
+| Hash Map (separate chaining) | Member storage and O(1) lookup by ID |
+| Doubly Linked List | Transaction history — insert at tail, traverse both ways |
+| Stack (linked list) | Undo engine — last expense is first to revert |
+| Max-Heap (array) | Debt analytics — member with highest debt at the root |
+
+Each structure is in its own `.h` / `.cpp` pair under `include/` and `src/`.
+
+---
+
+## How the Undo Works
+
+Every time an expense is logged, the transaction node gets appended to the tail of the doubly linked list. At the same time, a pointer to that node is pushed onto the undo stack.
+
+When undo is called:
+1. Pop the top of the stack — this gives the exact node to remove
+2. Reverse every balance change stored inside that node
+3. Unlink the node from the DLL using its own `prev` and `next` pointers — no search needed
+
+Removal is O(1) because the DLL node already knows its neighbors. This is the key advantage over a singly linked list or an array.
 
 ---
 
 ## Project Structure
 
 ```
-Hostel-kharcha-manager/
+DSA project/
 ├── include/
-│   ├── MemberHash.h          ← Hash Map class definition
-│   ├── TransactionTimeline.h ← DLL + Stack class definition
-│   └── DebtHeap.h            ← Max-Heap class definition
+│   ├── MemberHash.h
+│   ├── TransactionTimeline.h
+│   └── DebtHeap.h
 ├── src/
-│   ├── MemberHash.cpp        ← Hash Map implementation
-│   ├── TransactionTimeline.cpp ← DLL + Stack implementation
-│   ├── DebtHeap.cpp          ← Max-Heap implementation
-│   └── main.cpp              ← Entry point + UI menu
-├── DEBTHEAP_FUNCTIONALITY_GUIDE.md   ← Viva guide: DebtHeap
-├── TRANSACTION_TIMELINE_VIVA_GUIDE.md ← Viva guide: TransactionTimeline
-├── HostelKharchaManager_FormalProposal.docx
-└── HKM.exe                   ← Pre-built Windows binary
+│   ├── main.cpp
+│   ├── MemberHash.cpp
+│   ├── TransactionTimeline.cpp
+│   └── DebtHeap.cpp
+├── members.csv          (auto-generated on first run)
+├── transactions.csv     (auto-generated on first run)
+└── HKM.exe
 ```
 
 ---
 
 ## Build & Run
 
-**Requires:** g++ with C++17 support (MinGW on Windows)
+Requires g++ (MinGW on Windows).
 
 ```bash
-g++ -std=c++17 -o HKM.exe src/main.cpp src/MemberHash.cpp src/TransactionTimeline.cpp src/DebtHeap.cpp
-./HKM.exe
+g++ -o HKM.exe src/main.cpp src/TransactionTimeline.cpp src/MemberHash.cpp src/DebtHeap.cpp -I include
+.\HKM.exe
+```
+
+Default admin login: `admin` / `admin123`
+
+---
+
+## Quick Demo
+
+```
+1. Sign up two roommates (A01, A02)
+2. Log in as admin
+3. Log an expense: Groceries, Rs. 600, paid by A01, equal split
+4. View timeline — both entries appear
+5. View balances — A01 is owed Rs. 300, A02 owes Rs. 300
+6. Undo last transaction — balances go back to zero
+7. View timeline — expense is gone
 ```
 
 ---
 
-## DSA Concepts Demonstrated
+## Team
 
-### Hash Map (MemberHash)
-- Array of `TABLE_SIZE = 100` buckets
-- **Collision resolution:** Separate chaining (linked list at each bucket)
-- **Hash function:** Sum of ASCII values mod TABLE_SIZE
-- Insert at **HEAD** of chain for O(1) insertion
-- Average O(1) lookup, O(n) worst case
+| Member | Role |
+|---|---|
+| Abdul Basit Shahid | Hash Map — member registration and balance tracking |
+| Aizaz Noor | Doubly Linked List + Stack — transaction history and undo engine |
+| Muhammad Abdullah | Max-Heap — debt priority analytics and reporting |
 
-### Doubly Linked List (TransactionTimeline)
-- `head` and `tail` pointers for O(1) append
-- Bidirectional links (`prev`/`next`) enabling middle-node deletion in O(1)
-- Full 4-case deletion: only node / head / tail / middle
+---
 
-### Stack (Undo Engine)
-- Implemented as a singly linked list (no array, unbounded)
-- Every new transaction is pushed; undo pops the top and removes it from the DLL
-- LIFO: last transaction is always the first to be undone
+## Language
 
-### Max-Heap (DebtHeap)
-- Dynamic array representing a complete binary tree
-- `heapifyUp` on insert, `heapifyDown` on extract
-- Always yields the **highest debtor first** via `extractMaxDebtor()`
-- Rule of Three applied: copy constructor and assignment operator deleted
+C++ — compiled with g++ on Windows. Uses `<windows.h>` for ANSI color support in the terminal.
