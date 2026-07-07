@@ -37,16 +37,16 @@ This app keeps a running ledger of every shared expense, splits costs automatica
 **Login / Sign Up portal**
 ![Portal Menu](screenshots/02_portal.png)
 
-**Main menu — showing 5 members and 6 transactions loaded from file**
+**Main menu showing 5 members and 6 transactions loaded from file**
 ![Main Menu](screenshots/03_main_menu.png)
 
-**Transaction timeline — full expense history**
+**Transaction timeline full expense history**
 ![Transaction Timeline](screenshots/04_timeline.png)
 
-**Roommate balances — live net balance for each member**
+**Roommate balances live net balance for each member**
 ![Roommate Balances](screenshots/05_balances.png)
 
-**Debt priority report — max-heap puts the highest debtor at the top**
+**Debt priority report max-heap puts the highest debtor at the top**
 ![Debt Report](screenshots/06_debt_report.png)
 
 ---
